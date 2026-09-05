@@ -1587,3 +1587,14 @@ try:
     del _fix_dill
 except Exception:
     pass
+
+# CPython 3.14 widened pickle._Pickler._batch_setitems's signature; datasets' dill
+# Pickler override has not caught up, so building a datasets.Dataset raises
+# TypeError before training even starts. See
+# import_fixes.fix_datasets_dill_batch_setitems_arity.
+try:
+    from .import_fixes import fix_datasets_dill_batch_setitems_arity as _fix_datasets_dill
+    _fix_datasets_dill()
+    del _fix_datasets_dill
+except Exception:
+    pass

@@ -552,6 +552,27 @@ def patch_vllm_for_notebooks():
 _UNSLOTH_DC_BACKFILL_FLAG = "__unsloth_dc_defaults_backfilled__"
 
 
+def _own_annotations(cls):
+    """``cls``'s own (non-inherited) ``__annotations__``, PEP 649 safe.
+
+    ``cls.__dict__.get("__annotations__")`` stops finding anything once a class
+    body has only bare annotations: Python 3.14 defers annotations by default
+    (PEP 649/749), so a class like ``class Child(Base): vision_config: object``
+    never populates ``__dict__["__annotations__"]`` eagerly -- it is computed
+    lazily from ``__annotate__``. ``inspect.get_annotations`` is the stdlib's
+    cross-version accessor for that and, called with a class, already resolves
+    only the class's own annotations rather than the whole MRO, matching what
+    the old dict lookup gave on every Python version before 3.14.
+    """
+    get_annotations = getattr(inspect, "get_annotations", None)  # 3.10+
+    if get_annotations is not None:
+        try:
+            return get_annotations(cls) or {}
+        except Exception:
+            pass
+    return cls.__dict__.get("__annotations__") or {}
+
+
 def _backfill_dataclass_defaults(cls):
     """Give class-local bare annotations a ``None`` default.
 
@@ -562,7 +583,7 @@ def _backfill_dataclass_defaults(cls):
     """
     if cls.__dict__.get(_UNSLOTH_DC_BACKFILL_FLAG):
         return []
-    own_annotations = cls.__dict__.get("__annotations__") or {}
+    own_annotations = _own_annotations(cls)
     backfilled = []
     for name, annotation in own_annotations.items():
         text = (
@@ -5873,5 +5894,65 @@ def fix_dill_module_by_value_pickling():
             "Unsloth: patched dill to pickle importable modules by reference; "
             f"{getattr(probe, '__name__', '?')} is installed outside a "
             "site-packages tree."
+        )
+    return True
+
+
+def fix_datasets_dill_batch_setitems_arity():
+    """Fix `datasets`' dill Pickler for an interpreter whose pickle needs more args.
+
+    CPython 3.14 gave `pickle._Pickler._batch_setitems` a required `obj` parameter
+    (so a `save` failure partway through a dict can attach an "item %r" note naming
+    the container), and `dill.Pickler` inherits that method unchanged. As of
+    datasets 4.3.0, `datasets.utils._dill.Pickler` still overrides it with the
+    pre-3.14 shape (`self, items`) to sort dict keys before delegating -- so
+    `pickle.py`'s own `save_dict` calling `self._batch_setitems(obj.items(), obj)`
+    raises `TypeError: _batch_setitems() takes 2 positional arguments but 3 were
+    given` the moment any code builds a `datasets.Dataset` (fingerprinting hashes
+    every field through this Pickler). Every training path here does that.
+
+    Probed by comparing signatures rather than gated on sys.version_info: a
+    datasets release that fixes this upstream, or a future pickle change that
+    widens the gap further, is measured directly instead of guessed from a
+    version number.
+    """
+    try:
+        from datasets.utils._dill import Pickler as _DatasetsPickler
+        import dill
+    except Exception:
+        return False
+
+    original = _DatasetsPickler.__dict__.get("_batch_setitems")
+    if original is None or getattr(original, "_unsloth_py314_dill_fix", False):
+        return False
+
+    try:
+        base_params = list(inspect.signature(dill.Pickler._batch_setitems).parameters)
+        override_params = list(inspect.signature(original).parameters)
+    except (TypeError, ValueError):
+        return False
+    # Only the exact gap this exists for: the base method dill.Pickler resolves to
+    # (ordinarily pickle._Pickler's) now wants more positional parameters than the
+    # datasets override accepts.
+    if len(base_params) <= len(override_params):
+        return False
+
+    @functools.wraps(original)
+    def _batch_setitems(self, items, obj = None):
+        if self._legacy_no_dict_keys_sorting:
+            return dill.Pickler._batch_setitems(self, items, obj)
+        try:
+            items = sorted(items)
+        except Exception:  # TypeError, decimal.InvalidOperation, etc.
+            from datasets.fingerprint import Hasher
+            items = sorted(items, key = lambda x: Hasher.hash(x[0]))
+        return dill.Pickler._batch_setitems(self, items, obj)
+
+    setattr(_batch_setitems, "_unsloth_py314_dill_fix", True)
+    _DatasetsPickler._batch_setitems = _batch_setitems
+    if UNSLOTH_ENABLE_LOGGING:
+        logger.info(
+            "Unsloth: patched datasets' dill Pickler for this interpreter's "
+            "_batch_setitems signature (CPython 3.14+ added a required `obj` arg)."
         )
     return True
