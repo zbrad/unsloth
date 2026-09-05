@@ -15,9 +15,11 @@ Kept deliberately tiny so it finishes in well under a minute: a 0.6B model,
 prompts/completions. Seeded, so the asserted metrics are reproducible.
 
 Run directly (`python tests/fast_inference/test_fast_inference.py`) or via
-pytest; it skips automatically when no CUDA device is present.
+pytest; it skips automatically when there is no CUDA device, no vLLM install,
+or the GPU is one `fast_inference` is known to fall back from (DGX Spark).
 """
 
+import importlib.util
 import math
 import sys
 from pathlib import Path
@@ -32,6 +34,32 @@ from tests.utils import header_footer_context
 
 # Spins up a real inference path on the accelerator.
 pytestmark = pytest.mark.gpu
+
+
+def _fast_inference_unavailable_reason():
+    """None if `fast_inference=True` will actually run on vLLM here; else why not.
+
+    Mirrors unsloth/models/loader.py's own gate (vLLM importable, then a DGX
+    Spark / NVIDIA GB10 check that silently falls back to native inference even
+    with vLLM installed) so this test skips for the same reasons `from_pretrained`
+    would downgrade `fast_inference` to False, rather than proceeding and crashing
+    on vLLM-only kwargs (`enforce_eager`, `gpu_memory_utilization`,
+    `compilation_config`) forwarded to a plain HF model.
+
+    `importlib.util.find_spec` does not import vllm, so this stays import-free
+    like the CUDA check it extends.
+    """
+    if not torch.cuda.is_available():
+        return "fast_inference needs a CUDA GPU + vLLM"
+    if importlib.util.find_spec("vllm") is None:
+        return "fast_inference needs vLLM installed (`pip install vllm`)"
+    for i in range(torch.cuda.device_count()):
+        if "NVIDIA GB10" in str(torch.cuda.get_device_name(i)).upper():
+            return "fast_inference=True is currently broken on DGX Spark (NVIDIA GB10) as of January 2026"
+    return None
+
+
+_FAST_INFERENCE_SKIP_REASON = _fast_inference_unavailable_reason()
 
 
 MODEL_NAME = "unsloth/Qwen3-0.6B"
@@ -83,7 +111,10 @@ def _metric(metrics, *names):
     return None
 
 
-@pytest.mark.skipif(not torch.cuda.is_available(), reason = "fast_inference needs a CUDA GPU + vLLM")
+@pytest.mark.skipif(
+    _FAST_INFERENCE_SKIP_REASON is not None,
+    reason = _FAST_INFERENCE_SKIP_REASON or "",
+)
 def test_fast_inference():
     # Import here, not at module load: importing unsloth probes for an accelerator and errors on CPU-only machines, so
     # deferring keeps pytest collection and the skip path import-free. Unsloth must precede TRL.

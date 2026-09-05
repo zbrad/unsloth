@@ -549,11 +549,9 @@ class FastLanguageModel(FastLlamaModel):
         )
 
         if fast_inference:
-            if importlib.util.find_spec("vllm") is None:
-                raise ImportError(
-                    "Unsloth: Please install vLLM before enabling `fast_inference`!\n"
-                    "You can do this in a terminal via `pip install vllm`"
-                )
+            # Checked before the vLLM-installed check below: a DGX Spark host disables
+            # fast_inference regardless, so it should never be told to install vLLM
+            # first only to have it silently turned back off.
             if DEVICE_TYPE_TORCH == "cuda":
                 for i in range(DEVICE_COUNT):
                     # DGX Spark vLLM breaks.
@@ -564,6 +562,11 @@ class FastLanguageModel(FastLlamaModel):
                         )
                         fast_inference = False
                         break
+            if fast_inference and importlib.util.find_spec("vllm") is None:
+                raise ImportError(
+                    "Unsloth: Please install vLLM before enabling `fast_inference`!\n"
+                    "You can do this in a terminal via `pip install vllm`"
+                )
 
         # bitsandbytes unusable (absent, or unstable on some AMD stacks). A capability check, so not
         # gated on use_exact_model_name, which only suppresses repo-name remapping.
@@ -1391,11 +1394,9 @@ class FastModel(FastBaseModel):
                 device_map = distributed_device_map
 
         if fast_inference:
-            if importlib.util.find_spec("vllm") is None:
-                raise ImportError(
-                    "Unsloth: Please install vLLM before enabling `fast_inference`!\n"
-                    "You can do this in a terminal via `pip install vllm`"
-                )
+            # Checked before the vLLM-installed check below: a DGX Spark host disables
+            # fast_inference regardless, so it should never be told to install vLLM
+            # first only to have it silently turned back off.
             if DEVICE_TYPE_TORCH == "cuda":
                 for i in range(DEVICE_COUNT):
                     # DGX Spark vLLM breaks.
@@ -1406,6 +1407,11 @@ class FastModel(FastBaseModel):
                         )
                         fast_inference = False
                         break
+            if fast_inference and importlib.util.find_spec("vllm") is None:
+                raise ImportError(
+                    "Unsloth: Please install vLLM before enabling `fast_inference`!\n"
+                    "You can do this in a terminal via `pip install vllm`"
+                )
 
         # Find FP8, BnB 4bit, other mapped names
         old_model_name = model_name
