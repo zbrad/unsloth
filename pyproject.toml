@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==80.9.0", "setuptools-scm==9.2.0"]
+requires = ["setuptools==83.0.0", "setuptools-scm==9.2.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -115,7 +115,7 @@ studio = [
     "pandas==2.3.3",
     "nest_asyncio==1.6.0",
     "datasets==4.3.0",
-    "pyjwt==2.13.0",
+    "pyjwt==2.15.0",
     "huggingface-hub>=1.23.0,<2.0 ; python_version >= '3.10'",
     "huggingface-hub==0.36.2 ; python_version < '3.10'",
     "urllib3>=2.3.0",
@@ -168,7 +168,7 @@ huggingfacenotorch = [
     # on 3.9 and the whole extra becomes unresolvable.
     "diffusers>=0.39.0 ; python_version >= '3.10'",
     "diffusers ; python_version < '3.10'",
-    "transformers>=4.51.3,!=4.52.0,!=4.52.1,!=4.52.2,!=4.52.3,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.5.0",
+    "transformers>=4.51.3,!=4.52.0,!=4.52.1,!=4.52.2,!=4.52.3,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.18.0",
     "trl>=0.18.2,!=0.19.0,<=0.24.0",
     "sentence-transformers",
 ]
@@ -227,7 +227,7 @@ huggingface = [
 # that pairing is supported: v0.0.34's notes record the migration to the PyTorch
 # stable API/ABI, "which means that binary builds targeting PyTorch 2.10+ will be
 # compatible with any later version". Capping also has a cost -- 0.0.34 pins
-# torch==2.10.0 EXACTLY, so a cap strands anyone on 2.10.1. The axis that actually
+# torch==2.13.0 EXACTLY, so a cap strands anyone on 2.10.1. The axis that actually
 # has to match is the CUDA family, which this extra cannot see and install.ps1
 # handles instead.
 windows = [
@@ -459,38 +459,38 @@ cu130onlytorch291 = [
 ]
 cu126onlytorch2100 = [
     # Pin torch so ARM64 (x86-64-only xformers wheel skipped) stays on 2.10.
-    "torch==2.10.0",
+    "torch==2.13.0",
     "xformers @ https://download.pytorch.org/whl/cu126/xformers-0.0.34-cp39-abi3-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
     "xformers @ https://download.pytorch.org/whl/cu126/xformers-0.0.34-cp39-abi3-win_amd64.whl ; (sys_platform == 'win32') and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
 ]
 cu128onlytorch2100 = [
-    "torch==2.10.0",
+    "torch==2.13.0",
     "xformers @ https://download.pytorch.org/whl/cu128/xformers-0.0.34-cp39-abi3-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
     "xformers @ https://download.pytorch.org/whl/cu128/xformers-0.0.34-cp39-abi3-win_amd64.whl ; (sys_platform == 'win32') and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
 ]
 cu130onlytorch2100 = [
-    "torch==2.10.0",
+    "torch==2.13.0",
     "xformers @ https://download.pytorch.org/whl/cu130/xformers-0.0.34-cp39-abi3-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
     "xformers @ https://download.pytorch.org/whl/cu130/xformers-0.0.34-cp39-abi3-win_amd64.whl ; (sys_platform == 'win32') and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
 ]
 cu126onlytorch2110 = [
     # Pin the trio to +cuNNN: torch 2.11+ defaults to a CUDA-13 wheel and xformers 0.0.35
     # does not pin torch. == not a range (+cu126 wins, PEP 440) and not === (force-replaces).
-    "torch==2.11.0+cu126",
+    "torch==2.13.0",
     "torchvision==0.26.0+cu126",
     "torchaudio==2.11.0+cu126",
     "xformers @ https://download.pytorch.org/whl/cu126/xformers-0.0.35-py39-none-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
     "xformers @ https://download.pytorch.org/whl/cu126/xformers-0.0.35-py39-none-win_amd64.whl ; (sys_platform == 'win32') and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
 ]
 cu128onlytorch2110 = [
-    "torch==2.11.0+cu128",
+    "torch==2.13.0",
     "torchvision==0.26.0+cu128",
     "torchaudio==2.11.0+cu128",
     "xformers @ https://download.pytorch.org/whl/cu128/xformers-0.0.35-py39-none-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
     "xformers @ https://download.pytorch.org/whl/cu128/xformers-0.0.35-py39-none-win_amd64.whl ; (sys_platform == 'win32') and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
 ]
 cu130onlytorch2110 = [
-    "torch==2.11.0+cu130",
+    "torch==2.13.0",
     "torchvision==0.26.0+cu130",
     "torchaudio==2.11.0+cu130",
     "xformers @ https://download.pytorch.org/whl/cu130/xformers-0.0.35-py39-none-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
@@ -498,14 +498,14 @@ cu130onlytorch2110 = [
 ]
 # torch 2.12 ships on cu126/cu130 only, so no cu128 leaf; torchaudio has no 2.12 release.
 cu126onlytorch2120 = [
-    "torch==2.12.0+cu126",
+    "torch==2.13.0",
     "torchvision==0.27.0+cu126",
     "torchaudio==2.11.0+cu126",
     "xformers @ https://download.pytorch.org/whl/cu126/xformers-0.0.35-py39-none-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
     "xformers @ https://download.pytorch.org/whl/cu126/xformers-0.0.35-py39-none-win_amd64.whl ; (sys_platform == 'win32') and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
 ]
 cu130onlytorch2120 = [
-    "torch==2.12.0+cu130",
+    "torch==2.13.0",
     "torchvision==0.27.0+cu130",
     "torchaudio==2.11.0+cu130",
     "xformers @ https://download.pytorch.org/whl/cu130/xformers-0.0.35-py39-none-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
@@ -513,14 +513,14 @@ cu130onlytorch2120 = [
 ]
 cu126onlytorch2121 = [
     # torchvision exact-pins torch, so the 2.12.1 patch takes 0.27.1.
-    "torch==2.12.1+cu126",
+    "torch==2.13.0",
     "torchvision==0.27.1+cu126",
     "torchaudio==2.11.0+cu126",
     "xformers @ https://download.pytorch.org/whl/cu126/xformers-0.0.35-py39-none-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
     "xformers @ https://download.pytorch.org/whl/cu126/xformers-0.0.35-py39-none-win_amd64.whl ; (sys_platform == 'win32') and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
 ]
 cu130onlytorch2121 = [
-    "torch==2.12.1+cu130",
+    "torch==2.13.0",
     "torchvision==0.27.1+cu130",
     "torchaudio==2.11.0+cu130",
     "xformers @ https://download.pytorch.org/whl/cu130/xformers-0.0.35-py39-none-manylinux_2_28_x86_64.whl ; ('linux' in sys_platform) and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
@@ -809,7 +809,7 @@ colab-new = [
     "unsloth_zoo>=2026.9.1",
     "packaging",
     "tyro",
-    "transformers>=4.51.3,!=4.52.0,!=4.52.1,!=4.52.2,!=4.52.3,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.5.0",
+    "transformers>=4.51.3,!=4.52.0,!=4.52.1,!=4.52.2,!=4.52.3,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.18.0",
     "datasets>=3.4.1,!=4.0.*,!=4.1.0,<4.4.0",
     "sentencepiece>=0.2.0",
     "tqdm",
